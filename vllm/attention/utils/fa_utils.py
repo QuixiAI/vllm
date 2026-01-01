@@ -20,11 +20,13 @@ elif current_platform.is_xpu():
 elif current_platform.is_rocm():
     try:
         from flash_attn import flash_attn_varlen_func  # noqa: F401
-    except ImportError as e:
-        raise ImportError(
-            "Rocm platform requires upstream flash-attn "
-            "to be installed. Please install flash-attn first."
-        ) from e
+    except ImportError as exc:
+        flash_attn_varlen_func = None  # type: ignore[assignment]
+        logger.warning_once(
+            "flash_attn import failed on ROCm; falling back to non-FlashAttention "
+            "backends. Error: %s",
+            exc,
+        )
 
 
 def get_flash_attn_version(requires_alibi: bool = False) -> int | None:

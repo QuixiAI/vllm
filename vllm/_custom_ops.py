@@ -783,6 +783,23 @@ if hasattr(torch.ops._C, "ggml_moe_a8_vec"):
         return torch.empty((tokens * top_k, row), dtype=X.dtype, device=W.device)
 
 
+if hasattr(torch.ops._C, "fp8_marlin_gemm"):
+
+    @register_fake("_C::fp8_marlin_gemm")
+    def _fp8_marlin_gemm_fake(
+        a: torch.Tensor,
+        b_q_weight: torch.Tensor,
+        b_scales: torch.Tensor,
+        workspace: torch.Tensor,
+        num_bits: int,
+        fp8_is_fnuz: bool,
+        size_m: torch.SymInt,
+        size_n: torch.SymInt,
+        size_k: torch.SymInt,
+    ) -> torch.Tensor:
+        return torch.empty((size_m, size_n), device=a.device, dtype=a.dtype)
+
+
 # cutlass
 def cutlass_scaled_mm_supports_fp4(cuda_device_capability: int) -> bool:
     return torch.ops._C.cutlass_scaled_mm_supports_fp4(cuda_device_capability)
@@ -1365,6 +1382,30 @@ def gptq_marlin_gemm(
         use_atomic_add,
         use_fp32_reduce,
         is_zp_float,
+    )
+
+
+def fp8_marlin_gemm(
+    a: torch.Tensor,
+    b_q_weight: torch.Tensor,
+    b_scales: torch.Tensor,
+    workspace: torch.Tensor,
+    num_bits: int,
+    fp8_is_fnuz: bool,
+    size_m: int,
+    size_n: int,
+    size_k: int,
+) -> torch.Tensor:
+    return torch.ops._C.fp8_marlin_gemm(
+        a,
+        b_q_weight,
+        b_scales,
+        workspace,
+        num_bits,
+        fp8_is_fnuz,
+        size_m,
+        size_n,
+        size_k,
     )
 
 

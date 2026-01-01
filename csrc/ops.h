@@ -185,6 +185,13 @@ void cutlass_mla_decode(torch::Tensor const& out, torch::Tensor const& q_nope,
 
 torch::Tensor get_cuda_view_from_cpu_tensor(torch::Tensor& cpu_tensor);
 
+#ifdef USE_ROCM
+torch::Tensor fp8_marlin_gemm(torch::Tensor& a, torch::Tensor& b_q_weight,
+                              torch::Tensor& b_scales, torch::Tensor& workspace,
+                              int64_t num_bits, bool fp8_is_fnuz,
+                              int64_t size_m, int64_t size_n, int64_t size_k);
+#endif
+
 #ifndef USE_ROCM
 
 torch::Tensor awq_gemm(torch::Tensor _in_feats, torch::Tensor _kernel,

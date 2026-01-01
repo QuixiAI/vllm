@@ -134,5 +134,6 @@ class CompressedTensorsW8A16Fp8(CompressedTensorsScheme):
             workspace=layer.workspace,
             size_n=layer.output_size_per_partition,
             size_k=layer.input_size_per_partition,
+            fp8_is_fnuz=getattr(layer, "fp8_is_fnuz", None),
             bias=bias,
         )

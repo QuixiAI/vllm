@@ -917,6 +917,8 @@ if (VLLM_GPU_LANG STREQUAL "HIP")
   # Add QuickReduce kernels
   list(APPEND VLLM_EXT_SRC
     "csrc/custom_quickreduce.cu"
+    "csrc/quantization/fp8/gptq_marlin_repack_hip.cu"
+    "csrc/quantization/fp8/fp8_marlin_hip.cu"
   )
 # if ROCM endif
 endif()

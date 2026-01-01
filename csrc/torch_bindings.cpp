@@ -232,6 +232,20 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
   ops.impl("rotary_embedding", torch::kCUDA, &rotary_embedding);
 
   // Quantization ops
+#if defined(USE_ROCM)
+  // FP8 Marlin GEMM (ROCm).
+  ops.def(
+      "fp8_marlin_gemm(Tensor a, Tensor b_q_weight, Tensor b_scales, "
+      "Tensor workspace, int num_bits, bool fp8_is_fnuz, SymInt size_m, "
+      "SymInt size_n, SymInt size_k) -> Tensor");
+  ops.impl("fp8_marlin_gemm", torch::kCUDA, &fp8_marlin_gemm);
+
+  // gptq_marlin repack from GPTQ (ROCm).
+  ops.def(
+      "gptq_marlin_repack(Tensor b_q_weight, Tensor perm, "
+      "SymInt size_k, SymInt size_n, int num_bits, bool is_a_8bit) -> Tensor");
+#endif
+
 #ifndef USE_ROCM
   // Quantized GEMM for AWQ.
   ops.def(
