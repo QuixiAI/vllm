@@ -71,6 +71,7 @@ from vllm.model_executor.layers.quantization.utils.marlin_utils import (
 )
 from vllm.model_executor.layers.quantization.utils.marlin_utils_fp8 import (
     apply_fp8_marlin_linear,
+    is_fp8_marlin_supported,
     prepare_fp8_layer_for_marlin,
     prepare_moe_fp8_layer_for_marlin,
 )
@@ -159,10 +160,14 @@ def get_fp8_moe_backend(
 
     # weight-only path for older GPUs without native FP8
     use_marlin = (
-        not current_platform.has_device_capability(89)
-        or envs.VLLM_TEST_FORCE_FP8_MARLIN
+        not current_platform.supports_fp8() or envs.VLLM_TEST_FORCE_FP8_MARLIN
     )
-    if current_platform.is_rocm():
+    if use_marlin and not is_fp8_marlin_supported():
+        if envs.VLLM_TEST_FORCE_FP8_MARLIN:
+            logger.warning_once(
+                "FP8 Marlin is forced but not supported on this GPU; "
+                "falling back to other backends."
+            )
         use_marlin = False
     if use_marlin:
         logger.info_once("Using Marlin backend for FP8 MoE")
@@ -409,11 +414,15 @@ class Fp8LinearMethod(LinearMethodBase):
         # kernel for fast weight-only FP8 quantization
         self.marlin_input_dtype = None
         self.use_marlin = (
-            not current_platform.has_device_capability(89)
+            not current_platform.supports_fp8()
             or envs.VLLM_TEST_FORCE_FP8_MARLIN
         )
-        # Disable marlin for rocm
-        if current_platform.is_rocm():
+        if self.use_marlin and not is_fp8_marlin_supported():
+            if envs.VLLM_TEST_FORCE_FP8_MARLIN:
+                logger.warning_once(
+                    "FP8 Marlin is forced but not supported on this GPU; "
+                    "falling back to other backends."
+                )
             self.use_marlin = False
         if vllm_is_batch_invariant():
             self.use_marlin = False
@@ -684,6 +693,7 @@ class Fp8LinearMethod(LinearMethodBase):
                 size_n=layer.output_size_per_partition,
                 size_k=layer.input_size_per_partition,
                 input_dtype=self.marlin_input_dtype,
+                fp8_is_fnuz=getattr(layer, "fp8_is_fnuz", None),
                 bias=bias,
             )
 
